@@ -1,0 +1,1 @@
+com.sphenon.basics.javacode.classes.JavaCodeManagerImpl.ClassPath-ooemprofile=\u0000JavaScript/Cache:":"+config.get(context, "com.sphenon.basics.locating.WORKSPACE", "")+"/ee/software/components/domains/modelling/ooem/profiles/basic/build/generated/library/ooembasicprofile.jar"
