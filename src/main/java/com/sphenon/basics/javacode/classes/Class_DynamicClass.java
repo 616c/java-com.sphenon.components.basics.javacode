@@ -1,7 +1,7 @@
 package com.sphenon.basics.javacode.classes;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -286,7 +286,28 @@ abstract public class Class_DynamicClass<Interface> implements DynamicClass<Inte
                             return false;
                         }
                         long java_modification = getJavaCodeManager(context).getDefaultResource(context).getJavaFile(context).lastModified();
-                        if (java_modification > class_creation_date.getTime()) {
+
+                        // Here are some ugly issues:
+                        // 1. ArtefactHistory.Created is written into generated file,
+                        //    but file last modification obviously is a little later
+                        // 2. We should not use file created date (birth date), since
+                        //    these do not change when files get overwritten
+                        // 3. File.lastModified says it returns milliseconds, but
+                        //    it does not, it always returns '000' as last digits
+                        // 4. most reliable and correct solution would be not to
+                        //    use File.lastModified, but read the ArtefactHistory.Created
+                        //    value from the source file directly; yet, this check
+                        //    would be rather costly
+                        // 5. therefore, we stay with File.lastModified and add a
+                        //    tolerance; worst case that can happen is when two
+                        //    creations happen very shortly one after the other
+
+                        // Tools for examination:
+                        // emacs: date-to-stamp and stamp-to-date
+                        // show fs modification timestamp and annotation value:
+                        // FILE= ; stat -c "%y" ${FILE} ; grep ArtefactHistory ${FILE} | sed -e 's/^.*Created="//' -e 's/").*$//'
+
+                        if (java_modification > class_creation_date.getTime() + 1000) {
                             System.err.println("note: class file in class path is older than java source, not loading this way (" + this.getFullClassName(context) + ")");
                             this.compiled_java_class = null;
                             return false;
@@ -307,7 +328,7 @@ abstract public class Class_DynamicClass<Interface> implements DynamicClass<Inte
             boolean success = false;
             if (this.tryToLoadAsResource(context)) {
                 if (reloading_required) {
-                    System.err.println("Load as reasource skipped: class was compiled, assuming imperative need to load via ClassLoader");
+                    // System.err.println("Load as resource skipped: class was compiled, assuming imperative need to load via ClassLoader");
                 } else {
                     success = this.tryToLoadJavaClassAsResource(context);
                 }
@@ -323,7 +344,7 @@ abstract public class Class_DynamicClass<Interface> implements DynamicClass<Inte
 
                 if (reloading_required) {
                     if (cjcl != null && cjcl.isLoaded(this.getFullClassName(context))) {
-                        System.err.println("Class " + this.getFullClassName(context) + " needs reloading");
+                        // System.err.println("Class " + this.getFullClassName(context) + " needs reloading");
                         cjcl = null;
                     }
                 }
